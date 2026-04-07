@@ -1,45 +1,44 @@
+# backend/app/main.py
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import settings
+from fastapi.middleware.cors import CORSMiddleware  # ← IMPORTANT: importer ça
 from app.core.database import init_db
-from app.routers import auth, users, subscriptions
+from app.routers import auth, users, subscriptions, agents, analysis
 
+# Créer l'app FIRST
 app = FastAPI(
-    title=settings.PROJECT_NAME,
-    version=settings.VERSION,
-    description="SEO Platform PFE API with Subscription System",
-    docs_url="/api/docs",
-    openapi_url="/api/openapi.json",
-    redoc_url="/api/redoc"
+    title="PFESEO API",
+    description="SEO Analysis Platform with AI Agents",
+    version="1.0.0",
+    docs_url="/api/docs",           # ← Swagger UI
+    redoc_url="/api/redoc",         # ← ReDoc (optionnel)
+    openapi_url="/api/openapi.json" # ← Spec OpenAPI
 )
 
-# ✅ CORS fix for React dev server
+
+# ⚠️ CORS DOIT être ajouté IMMÉDIATEMENT après la création de l'app
+# ⚠️ AVANT d'inclure les routers !
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["*"],  # ← "*" pour le développement (autorise tout)
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # GET, POST, PUT, DELETE, OPTIONS, etc.
+    allow_headers=["*"],  # Authorization, Content-Type, etc.
 )
 
-# Include routers
-app.include_router(auth.router)
-app.include_router(users.router)
-app.include_router(subscriptions.router)
+# ✅ Maintenant on peut inclure les routers
+app.include_router(auth.router, prefix="/api/auth", tags=["🔐 Auth"])
+app.include_router(users.router, prefix="/api/users", tags=["👤 Users"])
+app.include_router(subscriptions.router, prefix="/api/subscriptions", tags=["💳 Subs"])
+app.include_router(analysis.router, prefix="/api/analysis", tags=["📊 Analysis"])
+app.include_router(agents.router, prefix="/api/agents", tags=["🤖 Agents"])
 
+# Health check
+@app.get("/api/health")
+async def health():
+    return {"status": "ok", "cors": "enabled"}
+
+# Startup
 @app.on_event("startup")
-async def on_startup():
-    """Initialize MongoDB / Beanie"""
+async def startup():
     await init_db()
-
-@app.get("/api/health", tags=["Health"])
-async def health_check():
-    return {"status": "ok", "service": settings.PROJECT_NAME, "version": settings.VERSION}
-
-@app.get("/", tags=["Root"])
-async def root():
-    return {"message": "🚀 Welcome to SEO Platform API", "docs": "/api/docs", "health": "/api/health"}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    print("✅ MongoDB + CORS ready")

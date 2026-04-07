@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Header from "../Header";
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('analysis');
@@ -33,6 +34,7 @@ const Settings = () => {
 
   return (
     <div>
+      <Header />
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
         <p className="text-gray-600 mt-1">Manage your analysis preferences, notifications, and account settings</p>

@@ -19,27 +19,46 @@ export default function Login() {
     setLoading(true);
 
     try {
+      // ✅ IMPORTANT: Backend attend du JSON (UserLogin Pydantic), PAS du form-data
       const res = await fetch(`${API}/auth/login`, {
         method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ email, password })
+        headers: {
+          "Content-Type": "application/json",  // ← JSON, pas form-data !
+        },
+        body: JSON.stringify({ 
+          email,    // ← "email", pas "username"
+          password 
+        }),
       });
 
       const data = await res.json();
       console.log("LOGIN RESPONSE:", data);
 
       if (!res.ok) {
-        setError(data.detail || "Login failed");
+        // ✅ Gérer les erreurs 422 (validation) et 401 (auth)
+        if (Array.isArray(data.detail)) {
+          // Erreurs de validation FastAPI: [{loc, msg, type...}, ...]
+          const messages = data.detail.map(d => d.msg || JSON.stringify(d)).join(', ');
+          setError(messages);
+        } else if (typeof data.detail === 'object') {
+          setError(JSON.stringify(data.detail));
+        } else {
+          setError(String(data.detail || "Login failed"));
+        }
         setLoading(false);
         return;
       }
 
+      // ✅ Sauvegarder le token
       localStorage.setItem("token", data.access_token);
+      console.log("✅ TOKEN SAVED:", data.access_token.substring(0, 50) + "...");
+
+      // ✅ Rediriger
       navigate("/", { replace: true });
 
     } catch (err) {
-      console.error(err);
-      setError("Server not responding");
+      console.error("Login error:", err);
+      setError("Server not responding. Is backend running?");
     }
 
     setLoading(false);
@@ -54,7 +73,12 @@ export default function Login() {
 
           <h1 className="text-2xl font-bold text-center mb-6">Sign In</h1>
 
-          {error && <div className="bg-red-100 p-2 text-center text-red-600 mb-4">{error}</div>}
+          {/* ✅ Afficher l'erreur (convertie en string si objet) */}
+          {error && (
+            <div className="bg-red-100 p-2 text-center text-red-600 mb-4 text-sm">
+              {typeof error === 'object' ? JSON.stringify(error) : error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
 
@@ -78,7 +102,7 @@ export default function Login() {
 
             <button
               disabled={loading}
-              className="w-full bg-blue-600 text-white p-3 rounded"
+              className="w-full bg-blue-600 text-white p-3 rounded hover:bg-blue-700 transition"
             >
               {loading ? "Signing in..." : "Sign In"}
             </button>
@@ -86,7 +110,10 @@ export default function Login() {
           </form>
 
           <p className="text-center mt-4 text-sm">
-            No account? <Link to="/signup" className="text-blue-600">Register</Link>
+            No account?{" "}
+            <Link to="/signup" className="text-blue-600 hover:underline">
+              Register
+            </Link>
           </p>
 
         </div>

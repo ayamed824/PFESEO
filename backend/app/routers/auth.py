@@ -4,8 +4,11 @@ from app.schemas.auth import UserRegister, UserLogin, Token, UserResponse
 from app.models.user import User
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.core.config import settings
+from fastapi import Depends
+from app.core.security import get_current_active_user
 
-router = APIRouter(prefix="/api/auth", tags=["🔐 Authentication"])
+router = APIRouter( 
+    tags=["🔐 Authentication"])
 
 # ================= REGISTER =================
 @router.post("/register", response_model=UserResponse, status_code=201)
@@ -36,7 +39,21 @@ async def register(user_in: UserRegister):
         last_login=user.last_login,
         is_active=user.is_active
     )
+# ================= CURRENT USER =================
+@router.get("/me", response_model=UserResponse)
+async def get_me(current_user: User = Depends(get_current_active_user)):
 
+    return UserResponse(
+        id=str(current_user.id),
+        email=current_user.email,
+        full_name=current_user.full_name,
+        company=current_user.company,
+        goal=current_user.goal,
+        plan=current_user.plan,
+        created_at=current_user.created_at,
+        last_login=current_user.last_login,
+        is_active=current_user.is_active
+    )
 
 # ================= LOGIN =================
 @router.post("/login", response_model=Token)

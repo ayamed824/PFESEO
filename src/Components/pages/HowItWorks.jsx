@@ -9,7 +9,7 @@ export default function HowItWorks() {
   ];
 
   return (
-    <>
+    <div>
       <Header /> {/* ← ajoute le Header ici */}
       <section id="how-it-works-section" className="py-20 bg-gray-50">
         <div className="max-w-6xl mx-auto px-6 text-center">
@@ -30,7 +30,7 @@ export default function HowItWorks() {
             ))}
           </div>
         </div>
-      </section>
-    </>
+     </section>
+</div>
   );
-}
+};

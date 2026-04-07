@@ -8,7 +8,10 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
     API_V1_PREFIX: str = "/api"
     DEBUG: bool = True
-    
+     # ==================== OPENROUTER AI ====================
+    OPENROUTER_API_KEY: Optional[str] = None
+    OPENROUTER_MODEL: str = "openrouter/free"
+    OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
     # ==================== MONGODB ====================
     MONGODB_URL: str = "mongodb://localhost:27017"
     DATABASE_NAME: str = "seo_platform"

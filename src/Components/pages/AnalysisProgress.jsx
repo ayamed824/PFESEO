@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Header from "../Header";
 
 const AnalysisProgress = ({ url }) => {
   const navigate = useNavigate();
@@ -46,6 +47,8 @@ const AnalysisProgress = ({ url }) => {
     const status = getStepStatus(stepNum);
     
     return (
+      <div>
+      <Header />
       <div className={`flex items-start space-x-4 pb-6 ${stepNum !== 4 ? 'border-b border-gray-100' : ''}`}>
         <div className="flex-shrink-0 mt-1">
           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
@@ -85,6 +88,7 @@ const AnalysisProgress = ({ url }) => {
             }`}></div>
           </div>
         </div>
+      </div>
       </div>
     );
   };

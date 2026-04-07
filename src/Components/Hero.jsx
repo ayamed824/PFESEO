@@ -1,25 +1,100 @@
-// src/pages/Hero.jsx
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../services/api";
 
 function Hero() {
+  const navigate = useNavigate();
   const [url, setUrl] = useState("");
-  const [error, setError] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [debugMessage, setDebugMessage] = useState(""); // Pour afficher les erreurs à l'écran
 
-  const analyze = () => {
-    if (!url) {
-      setError(true);
+  const analyze = async () => {
+    // 1️⃣ Validation de base de l'URL
+    if (!url.trim()) {
+      setError("Please enter a website URL");
       return;
     }
 
-    const pattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
-    if (!pattern.test(url)) {
-      alert("Please enter a valid URL");
-      setError(true);
+    // 2️⃣ Formatage de l'URL
+    let formattedUrl = url.trim();
+    if (!formattedUrl.startsWith("http://") && !formattedUrl.startsWith("https://")) {
+      formattedUrl = "https://" + formattedUrl;
+    }
+
+    // 3️⃣ Validation format URL
+    try {
+      new URL(formattedUrl);
+    } catch {
+      setError("Please enter a valid URL (e.g., https://example.com)");
       return;
     }
 
-    setError(false);
-    console.log("Analyzing:", url);
+    // 4️⃣ Vérifier l'authentification AVANT d'appeler l'API
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setDebugMessage("🔐 Redirecting to login...");
+      navigate("/login", { 
+        state: { returnTo: "/analysis", url: formattedUrl } 
+      });
+      return;
+    }
+
+    // 5️⃣ Lancer l'analyse via l'API (UN SEUL appel)
+    setLoading(true);
+    setError("");
+    setDebugMessage("🔄 Lancement de l'analyse...");
+
+    try {
+      const result = await api.launchAnalysis(formattedUrl);
+      
+      // ✅ Succès
+      setDebugMessage(`✅ Analyse terminée! Score: ${result.global_score}`);
+      
+      // Rediriger vers le dashboard avec les résultats
+      navigate("/dashboard", {
+        state: { 
+          newAnalysis: true,
+          analysisId: result.analysis_id,
+          message: "✅ Analysis completed!"
+        }
+      });
+      
+    } catch (err) {
+      // ❌ Gestion des erreurs
+      console.error("Analysis launch error:", err);
+      
+      let userMessage = "❌ Failed to launch analysis";
+      
+      if (err.message?.includes("401") || err.message?.includes("Unauthorized")) {
+        userMessage = "🔐 Session expired. Please login again.";
+        localStorage.removeItem("token");
+        navigate("/login?returnTo=/analysis");
+        return;
+      }
+      if (err.message?.includes("403") || err.message?.includes("quota")) {
+        userMessage = "❌ Analysis quota exceeded. Please upgrade your plan.";
+      } else if (err.message?.includes("CORS") || err.message?.includes("Failed to fetch")) {
+        userMessage = "🌐 Connection error. Please check if backend is running.";
+      } else if (err.message?.includes("Invalid URL")) {
+        userMessage = "❌ Please enter a valid website URL";
+      } else {
+        userMessage = `❌ Error: ${err.message || "Unknown error"}`;
+      }
+      
+      setError(userMessage);
+      setDebugMessage(userMessage);
+      
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle Enter key press
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !loading) {
+      analyze();
+    }
   };
 
   return (
@@ -59,26 +134,52 @@ function Hero() {
                   value={url}
                   onChange={(e) => {
                     setUrl(e.target.value);
-                    setError(false);
+                    setError("");
+                    setDebugMessage("");
                   }}
+                  onKeyPress={handleKeyPress}
+                  disabled={loading}
                   className={`w-full pl-12 py-4 border-2 rounded-lg ${
                     error ? "border-red-500" : "border-gray-200"
-                  } focus:outline-none focus:border-primary text-gray-900 text-lg transition`}
+                  } focus:outline-none focus:border-primary text-gray-900 text-lg transition disabled:bg-gray-50 disabled:cursor-not-allowed`}
                 />
                 {error && (
-                  <p className="text-red-500 text-sm mt-2 text-left">
-                    Please enter a valid URL
+                  <p className="text-red-500 text-sm mt-2 text-left flex items-center">
+                    <i className="fa-solid fa-circle-exclamation mr-1"></i>
+                    {error}
                   </p>
                 )}
               </div>
 
+              {/* Debug Message Display */}
+              {debugMessage && !error && (
+                <p className="text-blue-600 text-sm mt-2 text-left flex items-center">
+                  <i className="fa-solid fa-info-circle mr-1"></i>
+                  {debugMessage}
+                </p>
+              )}
+
               {/* Analyze Button */}
               <button
                 onClick={analyze}
-                className="w-full bg-primary text-white py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 transition flex items-center justify-center"
+                disabled={loading || !url.trim()}
+                className={`w-full py-4 rounded-lg font-semibold text-lg transition flex items-center justify-center ${
+                  loading || !url.trim()
+                    ? "bg-primary/50 text-white/70 cursor-not-allowed"
+                    : "bg-primary text-white hover:bg-blue-700"
+                }`}
               >
-                <i className="fa-solid fa-magnifying-glass mr-2"></i>
-                Analyze Website
+                {loading ? (
+                  <>
+                    <i className="fa-solid fa-spinner fa-spin mr-2"></i>
+                    Launching Analysis...
+                  </>
+                ) : (
+                  <>
+                    <i className="fa-solid fa-magnifying-glass mr-2"></i>
+                    Analyze Website
+                  </>
+                )}
               </button>
 
             </div>

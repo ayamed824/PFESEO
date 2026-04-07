@@ -3,6 +3,8 @@ import Header from "../Header"; // import ok
 
 function FeatureCard({ icon, color, title, description, items }) {
   return (
+  <div>
+    <Header />
     <div className="bg-white border-2 border-gray-200 rounded-2xl p-8 hover:border-primary hover:shadow-xl transition">
       <div className={`w-14 h-14 ${color} rounded-xl flex items-center justify-center mb-6`}>
         <i className={`fa-solid ${icon} text-2xl`}></i>
@@ -17,6 +19,7 @@ function FeatureCard({ icon, color, title, description, items }) {
           </li>
         ))}
       </ul>
+    </div>
     </div>
   );
 }

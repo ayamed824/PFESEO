@@ -21,10 +21,20 @@ import ReportHistory from "./Components/pages/ReportHistory";
 import Settings from "./Components/pages/Settings";
 
 function App() {
+
   const isAuthenticated = () => !!localStorage.getItem("token");
+
+  const protect = (component) => {
+    return isAuthenticated() ? (
+      <Layout>{component}</Layout>
+    ) : (
+      <Navigate to="/login" />
+    );
+  };
 
   return (
     <Routes>
+
       {/* Public pages */}
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
@@ -33,25 +43,17 @@ function App() {
       <Route path="/features" element={<Features />} />
       <Route path="/how-it-works" element={<HowItWorks />} />
 
-      {/* Protected dashboard */}
-      <Route
-        path="/dashboard"
-        element={
-          isAuthenticated() ? (
-            <Layout><MainDashboard /></Layout>
-          ) : (
-            <Navigate to="/login" />
-          )
-        }
-      />
-      <Route path="/technical-seo" element={<Layout><TechnicalSEO /></Layout>} />
-      <Route path="/content-analysis" element={<Layout><ContentAnalysis /></Layout>} />
-      <Route path="/ux-analysis" element={<Layout><UXAnalysis /></Layout>} />
-      <Route path="/popularity-seo" element={<Layout><PopularitySEO /></Layout>} />
-      <Route path="/intelligent-agents" element={<Layout><IntelligentAgents /></Layout>} />
-      <Route path="/recommendations" element={<Layout><Recommendations /></Layout>} />
-      <Route path="/report-history" element={<Layout><ReportHistory /></Layout>} />
-      <Route path="/settings" element={<Layout><Settings /></Layout>} />
+      {/* Protected pages */}
+      <Route path="/dashboard" element={protect(<MainDashboard />)} />
+      <Route path="/technical-seo" element={protect(<TechnicalSEO />)} />
+      <Route path="/content-analysis" element={protect(<ContentAnalysis />)} />
+      <Route path="/ux-analysis" element={protect(<UXAnalysis />)} />
+      <Route path="/popularity-seo" element={protect(<PopularitySEO />)} />
+      <Route path="/intelligent-agents" element={protect(<IntelligentAgents />)} />
+      <Route path="/recommendations" element={protect(<Recommendations />)} />
+      <Route path="/report-history" element={protect(<ReportHistory />)} />
+      <Route path="/settings" element={protect(<Settings />)} />
+
     </Routes>
   );
 }
