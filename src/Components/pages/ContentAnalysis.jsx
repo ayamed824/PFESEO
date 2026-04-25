@@ -20,43 +20,43 @@ const ContentAnalysis = () => {
   }, [navigate]);
 
   // 📡 Fetch analysis data on mount
-  useEffect(() => {
-    fetchContentData();
-  }, [analysisId]);
+ useEffect(() => {
+  fetchContentData();
+}, []);
 
   const fetchContentData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      let data;
-      if (analysisId) {
-        data = await api.getAnalysisResults(analysisId);
-      } else {
-        const analyses = await api.getMyAnalyses();
-        data = analyses.analyses?.[0] || null;
-      }
-      
-      if (data) {
-        setAnalysis(data);
-        setContentData(transformRawToContent(data.raw_data));
-      } else {
-        setAnalysis(null);
-        setContentData(null);
-      }
-    } catch (err) {
-      console.error("Failed to fetch content analysis:", err);
-      setError(err.message || "Failed to load analysis");
-      
-      if (err.message?.includes("401")) {
-        localStorage.removeItem("token");
-        navigate("/login");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+    setError(null);
 
+    // ❌ نحيو analysisId logic كامل
+    const analyses = await api.getMyAnalyses();
+
+    const latest = analyses.analyses?.[0]; // 🟢 آخر analyse
+
+    if (latest) {
+      // ⚠️ لازم نجيبو التفاصيل الكاملة (raw_data)
+      const fullData = await api.getAnalysisResults(latest.id);
+
+      setAnalysis(fullData);
+      setContentData(transformRawToContent(fullData.raw_data));
+    } else {
+      setAnalysis(null);
+      setContentData(null);
+    }
+
+  } catch (err) {
+    console.error("Failed to fetch content analysis:", err);
+    setError(err.message || "Failed to load analysis");
+
+    if (err.message?.includes("401")) {
+      localStorage.removeItem("token");
+      navigate("/login");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
   // 🔧 Transformer raw_data en format Content Analysis
   const transformRawToContent = (raw) => {
     if (!raw) return null;

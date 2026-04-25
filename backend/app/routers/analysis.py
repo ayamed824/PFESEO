@@ -90,13 +90,24 @@ async def launch_analysis(
         # =============================
         # 3️⃣ Save Analysis
         # =============================
+        # ✅ FIX: convert dict → list
+        # ✅ FIX: convert dict → list
+        raw_issues = scores.get("issues", {})
+
+        all_issues = []
+        if isinstance(raw_issues, dict):
+            for level in ["critical", "high", "medium", "low"]:
+                all_issues.extend(raw_issues.get(level, []))
+        else:
+            all_issues = raw_issues
+
         analysis = Analysis(
             user_id=str(current_user.id),
             url=url,
             global_score=scores.get("global_score", 0),
-            category_scores=scores.get("categories", {}),  # ✅ FIX
+            category_scores=scores.get("categories", {}),
             raw_data=raw_data,
-            issues=scores.get("issues", []),              # ✅ FIX
+            issues=all_issues,   # ✅ FIXED
             status="completed"
         )
 

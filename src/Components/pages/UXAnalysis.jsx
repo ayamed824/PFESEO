@@ -20,43 +20,25 @@ const UXAnalysis = () => {
   }, [navigate]);
 
   // 📡 Fetch data on mount
-  useEffect(() => {
-    fetchUXData();
-  }, [analysisId]);
-
-  const fetchUXData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      let data;
-      if (analysisId) {
-        data = await api.getAnalysisResults(analysisId);
-      } else {
-        const analyses = await api.getMyAnalyses();
-        data = analyses.analyses?.[0] || null;
-      }
-      
-      if (data) {
-        setAnalysis(data);
-        setUxData(transformRawToUX(data.raw_data, data.category_scores?.ux));
-      } else {
-        setAnalysis(null);
-        setUxData(null);
-      }
-    } catch (err) {
-      console.error("Failed to fetch UX data:", err);
-      setError(err.message || "Failed to load analysis");
-      
-      if (err.message?.includes("401")) {
-        localStorage.removeItem("token");
-        navigate("/login");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  useEffect(() => { 
+    fetchUXData(); 
+  }, []);
+   const fetchUXData = async () => {
+     try {
+      setLoading(true); 
+      setError(null); 
+      const analyses = await api.getMyAnalyses();
+       const latest = analyses.analyses?.[0];
+        if (latest) {
+           const fullData = await api.getAnalysisResults(latest.id);
+           setAnalysis(fullData); 
+           setUxData(transformRawToUX(fullData.raw_data, fullData.category_scores?.ux));
+           } else { setAnalysis(null); setUxData(null);
+            } } catch (err) { console.error("Failed to fetch UX data:", err); 
+              setError(err.message || "Failed to load analysis"); 
+              if (err.message?.includes("401")) { localStorage.removeItem("token");
+                 navigate("/login"); } } finally {
+                   setLoading(false); } }; 
   // 🔧 Transformer raw_data en format UX Analysis
   const transformRawToUX = (raw, categoryScore) => {
     if (!raw) return null;
